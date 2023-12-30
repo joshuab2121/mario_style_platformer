@@ -1,12 +1,14 @@
 import pygame
+import settings
+from tiles import Tile
 from sys import exit
+from level import Level
 
 pygame.init()
-screen_width = 1200
-screen_height = 700
-screen = pygame.display.set_mode((screen_width, screen_height))
+screen = pygame.display.set_mode((settings.screen_width, settings.screen_height))
 pygame.display.set_caption('Platformer')
 clock = pygame.time.Clock()
+level = Level(settings.level_map, screen)
 
 while True:
     for event in pygame.event.get():
@@ -16,5 +18,7 @@ while True:
     # draw all our enemies
     # update everything
     screen.fill('black')
+    level.run()
+    
     pygame.display.update()
     clock.tick(60)
