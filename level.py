@@ -27,7 +27,7 @@ class Level:
                     self.tiles.add(Tile(pos,settings.tile_size))
                 if cell == 'P':
                     pos = (col_index*settings.tile_size, row_index * settings.tile_size)
-                    self.player.add(Player(pos))
+                    self.player.add(Player(pos,self.display_surface))
 
     def scroll_x(self):
         player = self.player.sprite
