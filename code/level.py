@@ -12,7 +12,8 @@ class Level:
     def __init__(self, level_data, surface):
         # level setup
         self.display_surface = surface
-        self.world_shift = -3
+        self.world_shift = 0
+        self.current_x = None
 
         # bg_palms setup
         bg_palms_layout = import_csv_layout(level_data['bg_palms'])
@@ -89,6 +90,7 @@ class Level:
                         sprite = Enemy(settings.tile_size, pos)
                     if type == 'fg_palms':
                         if val == '3':
+                            pos = tuple(map(lambda x, y: x+y, pos, (randint(0,30),randint(0,30))))
                             sprite = Palm(settings.tile_size, pos, 'graphics/terrain/palm_small', val)
                         if val == '4':
                             sprite = Palm(settings.tile_size, pos, 'graphics/terrain/palm_large', val)
@@ -115,7 +117,8 @@ class Level:
                 y = row_index * settings.tile_size
                 pos = (x,y)
                 if val == '0':
-                    pass    
+                    sprite = Player(pos, self.display_surface, self.create_jump_particles)
+                    self.player.add(sprite)     
                 if val == '1':
                     hat_surface = pygame.image.load('graphics/character/hat.png').convert_alpha()
                     sprite = StaticTile(settings.tile_size,pos, hat_surface)
@@ -175,8 +178,8 @@ class Level:
     def horizontal_movement_collision(self):
         player = self.player.sprite
         player.rect.x += player.direction.x * player.speed
-
-        for sprite in self.tiles.sprites():
+        collidable_sprites = self.terrain_sprites.sprites() + self.crates_sprites.sprites() + self.fg_palms_sprites.sprites()
+        for sprite in collidable_sprites:
             if sprite.rect.colliderect(player.rect):
                 if player.direction.x < 0: 
                     player.rect.left = sprite.rect.right
@@ -195,8 +198,9 @@ class Level:
     def vertical_movement_collision(self):
         player = self.player.sprite
         player.apply_gravity()
+        collidable_sprites = self.terrain_sprites.sprites() + self.crates_sprites.sprites() + self.fg_palms_sprites.sprites()
 
-        for sprite in self.tiles.sprites():
+        for sprite in collidable_sprites:
             if sprite.rect.colliderect(player.rect):
                 if player.direction.y > 0:
                     player.rect.bottom = sprite.rect.top
@@ -261,24 +265,20 @@ class Level:
         # Water
         self.water.draw(self.display_surface, self.world_shift)
 
-
-
-
         # dust particles
-        # # self.dust_sprite.update(self.world_shift)
-        # # self.dust_sprite.draw(self.display_surface)
+        self.dust_sprite.update(self.world_shift)
+        self.dust_sprite.draw(self.display_surface)
         
         # # level tiles 
         # # self.tiles.update(self.world_shift)
         # # self.tiles.draw(self.display_surface)
-        # self.scroll_x()
-
+        self.scroll_x()
 
         # # player 
-        # self.player.update()
-        # self.horizontal_movement_collision()
-        # self.get_player_on_ground()
-        # self.vertical_movement_collision()
-        # self.create_landing_dust()
-        # self.player.draw(self.display_surface)
+        self.player.update()
+        self.horizontal_movement_collision()
+        self.get_player_on_ground()
+        self.vertical_movement_collision()
+        self.create_landing_dust()
+        self.player.draw(self.display_surface)
         
