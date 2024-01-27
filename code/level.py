@@ -7,50 +7,59 @@ from particles import ParticleEffect
 from enemy import Enemy
 from decoration import Sky, Water, Clouds
 from random import randint
+from game_data import levels
 
 class Level:
-    def __init__(self, level_data, surface):
+    def __init__(self, current_level, surface, create_overworld):
         # level setup
         self.display_surface = surface
         self.world_shift = 0
-        self.current_x = None
+        # self.current_x = None
+        self.current_x = 0
+        print(current_level)
+        print(levels[current_level])
+        self.current_level = current_level
+        level_data = levels[current_level]
+        level_content = level_data['content']
+        self.new_max_level = level_data['unlock']
+        self.create_overworld = create_overworld
 
         # bg_palms setup
-        bg_palms_layout = import_csv_layout(level_data['bg_palms'])
+        bg_palms_layout = import_csv_layout(level_content['bg_palms'])
         self.bg_palms_sprites = self.create_tile_group(bg_palms_layout, 'bg_palms')
 
         # coins setup
-        coins_layout = import_csv_layout(level_data['coins'])
+        coins_layout = import_csv_layout(level_content['coins'])
         self.coins_sprites = self.create_tile_group(coins_layout, 'coins')
 
         # constraints setup
-        constraints_layout = import_csv_layout(level_data['constraints'])
+        constraints_layout = import_csv_layout(level_content['constraints'])
         self.constraints_sprites = self.create_tile_group(constraints_layout, 'constraints')
 
         # crates setup
-        crates_layout = import_csv_layout(level_data['crates'])
+        crates_layout = import_csv_layout(level_content['crates'])
         self.crates_sprites = self.create_tile_group(crates_layout, 'crates')
 
         # enemies setup
-        enemies_layout = import_csv_layout(level_data['enemies'])
+        enemies_layout = import_csv_layout(level_content['enemies'])
         self.enemies_sprites = self.create_tile_group(enemies_layout, 'enemies')
 
         # fg_palms setup
-        fg_palms_layout = import_csv_layout(level_data['fg_palms'])
+        fg_palms_layout = import_csv_layout(level_content['fg_palms'])
         self.fg_palms_sprites = self.create_tile_group(fg_palms_layout, 'fg_palms')
 
         # grass setup
-        grass_layout = import_csv_layout(level_data['grass'])
+        grass_layout = import_csv_layout(level_content['grass'])
         self.grass_sprites = self.create_tile_group(grass_layout, 'grass')
         
         # player setup
-        player_layout = import_csv_layout(level_data['player'])
+        player_layout = import_csv_layout(level_content['player'])
         self.player = pygame.sprite.GroupSingle()
         self.goal = pygame.sprite.GroupSingle()
         self.player_setup(player_layout)
 
         # terrain setup
-        terrain_layout = import_csv_layout(level_data['terrain'])
+        terrain_layout = import_csv_layout(level_content['terrain'])
         self.terrain_sprites = self.create_tile_group(terrain_layout, 'terrain')
 
         # decoration
@@ -58,9 +67,6 @@ class Level:
         level_width = len(terrain_layout[0]) * settings.tile_size
         self.water = Water(settings.screen_height - 40, level_width)
         self.clouds = Clouds(400, level_width, randint(10,30))
-
-        # self.setup_level(level_data)
-        self.current_x = 0
 
         # dust
         self.dust_sprite = pygame.sprite.GroupSingle()
@@ -107,7 +113,6 @@ class Level:
                         tile_surface = terrain_tile_list[int(val)]
                         sprite = StaticTile(settings.tile_size, pos, tile_surface)
                     sprite_group.add(sprite)
-        print(sprite_group)
         return sprite_group
     
     def player_setup(self, layout):
@@ -221,8 +226,17 @@ class Level:
             if pygame.sprite.spritecollide(enemy,self.constraints_sprites, False):
                 enemy.reverse()
 
+    def input(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_RETURN]:
+            self.create_overworld(self.current_level, self.new_max_level)
+            
+        # if keys[pygame.K_ESCAPE]:
+
     def run(self):        
         # run the entire game / level
+
+        self.input()
 
         # decoration 
         self.sky.draw(self.display_surface)
