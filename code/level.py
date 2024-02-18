@@ -226,18 +226,31 @@ class Level:
             if pygame.sprite.spritecollide(enemy,self.constraints_sprites, False):
                 enemy.reverse()
 
-    def input(self):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_RETURN]:
+    # def input(self):
+    #     keys = pygame.key.get_pressed()
+    #     # Level Passed
+    #     if keys[pygame.K_RETURN]:
+    #         self.create_overworld(self.current_level, self.new_max_level)
+    #     # Level Failed
+    #     if keys[pygame.K_ESCAPE]:
+    #         self.create_overworld(self.current_level, 0)
+
+    def check_death(self):
+        # Falling off screen.
+        if self.player.sprite.rect.top > settings.screen_height:
+            self.create_overworld(self.current_level, 0)
+
+    def check_win(self):
+        if pygame.sprite.spritecollide(self.player.sprite, self.goal, False):
             self.create_overworld(self.current_level, self.new_max_level)
-            
-        # if keys[pygame.K_ESCAPE]:
 
     def run(self):        
         # run the entire game / level
 
-        self.input()
-
+        # self.input()
+        self.check_death()
+        self.check_win()
+        
         # decoration 
         self.sky.draw(self.display_surface)
         self.clouds.draw(self.display_surface, self.world_shift)
@@ -282,10 +295,7 @@ class Level:
         # dust particles
         self.dust_sprite.update(self.world_shift)
         self.dust_sprite.draw(self.display_surface)
-        
-        # # level tiles 
-        # # self.tiles.update(self.world_shift)
-        # # self.tiles.draw(self.display_surface)
+
         self.scroll_x()
 
         # # player 
