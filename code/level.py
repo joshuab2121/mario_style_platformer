@@ -10,19 +10,23 @@ from random import randint
 from game_data import levels
 
 class Level:
-    def __init__(self, current_level, surface, create_overworld):
+    def __init__(self, current_level, surface, create_overworld, change_coins):
         # level setup
         self.display_surface = surface
         self.world_shift = 0
-        # self.current_x = None
-        self.current_x = 0
-        print(current_level)
-        print(levels[current_level])
+        self.current_x = None
+
+        # overworld creation
+        self.create_overworld = create_overworld
         self.current_level = current_level
+        
+        # level data
         level_data = levels[current_level]
         level_content = level_data['content']
         self.new_max_level = level_data['unlock']
-        self.create_overworld = create_overworld
+
+        # user interface
+        self.change_coins = change_coins
 
         # bg_palms setup
         bg_palms_layout = import_csv_layout(level_content['bg_palms'])
@@ -85,9 +89,9 @@ class Level:
                         sprite = Palm(settings.tile_size, pos, 'graphics/terrain/palm_bg', val)
                     if type == 'coins':
                         if val == '0':
-                            sprite = Coin(settings.tile_size, pos, 'graphics/coins/gold')
+                            sprite = Coin(settings.tile_size, pos, 'graphics/coins/gold', 5)
                         if val == '1':
-                            sprite = Coin(settings.tile_size, pos, 'graphics/coins/silver')
+                            sprite = Coin(settings.tile_size, pos, 'graphics/coins/silver', 1)
                     if type == 'constraints':
                         sprite = Tile(settings.tile_size, pos)
                     if type == 'crates':
@@ -226,15 +230,6 @@ class Level:
             if pygame.sprite.spritecollide(enemy,self.constraints_sprites, False):
                 enemy.reverse()
 
-    # def input(self):
-    #     keys = pygame.key.get_pressed()
-    #     # Level Passed
-    #     if keys[pygame.K_RETURN]:
-    #         self.create_overworld(self.current_level, self.new_max_level)
-    #     # Level Failed
-    #     if keys[pygame.K_ESCAPE]:
-    #         self.create_overworld(self.current_level, 0)
-
     def check_death(self):
         # Falling off screen.
         if self.player.sprite.rect.top > settings.screen_height:
@@ -244,13 +239,21 @@ class Level:
         if pygame.sprite.spritecollide(self.player.sprite, self.goal, False):
             self.create_overworld(self.current_level, self.new_max_level)
 
+    def check_coin_collisions(self):
+        collided_coins = pygame.sprite.spritecollide(self.player.sprite, self.coins_sprites, True)
+        if collided_coins:
+            for coin in collided_coins:
+                self.change_coins(coin.value)
+
+    
     def run(self):        
         # run the entire game / level
 
         # self.input()
         self.check_death()
         self.check_win()
-        
+        self.check_coin_collisions()
+
         # decoration 
         self.sky.draw(self.display_surface)
         self.clouds.draw(self.display_surface, self.world_shift)

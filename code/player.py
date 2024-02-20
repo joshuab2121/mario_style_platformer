@@ -71,8 +71,6 @@ class Player(pygame.sprite.Sprite):
             self.dust_frame_index += self.dust_animation_speed
             if self.dust_frame_index >= len(self.dust_run_paritcles):
                 self.dust_frame_index = 0
-            print(self.dust_run_paritcles)
-            print(int(self.dust_frame_index))
 
             dust_particle = self.dust_run_paritcles[int(self.dust_frame_index)]
 
