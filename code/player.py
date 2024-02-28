@@ -1,7 +1,9 @@
 import pygame
 from support import import_folder
+from math import sin
+
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, surface, create_jump_particles):
+    def __init__(self, pos, surface, create_jump_particles, change_health):
         super().__init__()
         self.import_character_assets()
         self.frame_index = 0
@@ -9,23 +11,38 @@ class Player(pygame.sprite.Sprite):
         self.image = self.animations['idle'][self.frame_index] 
         self.rect = self.image.get_rect(topleft = pos)
 
+        # audio
+        self.jump_sound = pygame.mixer.Sound('audio/effects/jump.wav')
+        self.jump_sound.set_volume(0.5)
+        self.hurt_sound = pygame.mixer.Sound('audio/effects/hit.wav')
+        self.hurt_sound.set_volume(0.5)
+
         # dust particles
         self.import_dust_run_particles()
         self.dust_frame_index = 0
         self.dust_animation_speed = 0.15
         self.display_surface = surface
         self.create_jump_particles = create_jump_particles
+
         # player movement
         self.direction = pygame.math.Vector2(0,0)
         self.speed = 8
         self.gravity = 0.8
         self.jump_speed = -16
+        self.collision_rect = pygame.Rect(self.rect.topleft, (50, self.rect.height))
+
 
         self.facing = "right"
         self.on_ground = False
         self.on_ceiling = False
         self.on_left = False
         self.on_right = False
+
+        # Health management
+        self.change_health = change_health
+        self.invincible = False
+        self.incincibility_duration = 500
+        self.hurt_time = 0
 
     def import_character_assets(self):
         character_path = 'graphics/character'
@@ -40,6 +57,7 @@ class Player(pygame.sprite.Sprite):
 
     def animate(self):
         animation = self.animations[self.get_status()]
+
         # loop over frame index
         self.frame_index += self.animation_speed
         if self.frame_index >= len(animation):
@@ -47,25 +65,19 @@ class Player(pygame.sprite.Sprite):
 
         if self.facing == "left":
             self.image = pygame.transform.flip(animation[int(self.frame_index)],True, False)
+            self.rect.bottomright = self.collision_rect.bottomright
         else:
             self.image = animation[int(self.frame_index)]
+            self.rect.bottomleft = self.collision_rect.bottomleft
 
-        # # set the rect
-        if self.on_ground and self.on_right:
-            self.rect = self.image.get_rect(bottomright = self.rect.bottomright)
-        elif self.on_ground and self.on_left:
-            self.rect = self.image.get_rect(bottomleft = self.rect.bottomleft)
-        elif self.on_ground:
-            self.rect = self.image.get_rect(midbottom = self.rect.midbottom)
-        elif self.on_ceiling and self.on_left:
-            self.rect = self.image.get_rect(topleft = self.rect.topleft)
-        elif self.on_ceiling and self.on_right:
-            self.rect = self.image.get_rect(topright = self.rect.topright)
-        elif self.on_ceiling:
-            self.rect = self.image.get_rect(midtop = self.rect.midtop)
-        # else:
-        #     self.rect = self.image.get_rect(center = self.rect.center)
-    
+        if self.invincible:
+            alpha = self.wave_value()
+            self.image.set_alpha(alpha)
+        else:
+            self.image.set_alpha(255)
+
+        self.rect = self.image.get_rect(midbottom = self.rect.midbottom)
+        
     def run_dust_animation(self):
         if self.get_status() == 'run' and self.on_ground:
             self.dust_frame_index += self.dust_animation_speed
@@ -110,17 +122,37 @@ class Player(pygame.sprite.Sprite):
         
     def jump(self):
         if self.on_ground:
+            self.jump_sound.play()
             self.direction.y = self.jump_speed
             self.create_jump_particles(self.rect.midbottom)
  
     def apply_gravity(self):
         self.direction.y += self.gravity
-        self.rect.y += self.direction.y
+        self.collision_rect.y += self.direction.y
+
+    def get_damage(self):
+        if not self.invincible:
+            self.hurt_sound.play()
+            self.change_health(-10)
+            self.invincible = True
+            self.hurt_time = pygame.time.get_ticks()
+
+    def invincibility_frames(self):
+        if self.invincible:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.hurt_time >= self.incincibility_duration:
+                self.invincible = False  
+
+    def wave_value(self):
+        value = sin(pygame.time.get_ticks()/20)
+        if value >=0: return 255
+        else: return 0
 
     def update(self):
         self.get_input()
         self.get_status()
         self.animate()
         self.run_dust_animation()
-        
+        self.invincibility_frames()
+        self.wave_value()
         
